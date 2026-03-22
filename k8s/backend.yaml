@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 2 # This runs TWO instances of your app for high availability!
+  selector:
+    matchLabels:
+      app: ecommerce-backend
+  template:
+    metadata:
+      labels:
+        app: ecommerce-backend
+    spec:
+      containers:
+        - name: ecommerce-backend
+          image: yourdockerhubusername/ecommerce-backend:latest # You will update this later
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql-service:3306/ecommerce_db?createDatabaseIfNotExist=true
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "root"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  type: NodePort # Exposes the app outside the K8s cluster
+  selector:
+    app: ecommerce-backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30001

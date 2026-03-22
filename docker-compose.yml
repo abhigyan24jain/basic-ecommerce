@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: ecommerce-mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ecommerce_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+
+  backend-app:
+    build: .
+    container_name: ecommerce-backend-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      # This dynamically overrides the localhost URL in your application.properties
+      # Notice how it points to 'mysql-db' (the name of the service above) instead of localhost
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/ecommerce_db?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+volumes:
+  mysql_data:

@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 @Data // Lombok handles getters, setters, and constructors
 @Entity
 @Table(name = "products")
-public class Product {
+public class Product extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

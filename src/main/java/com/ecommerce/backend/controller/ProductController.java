@@ -1,9 +1,11 @@
 package com.ecommerce.backend.controller;
 
 import com.ecommerce.backend.dto.ProductDto;
+import com.ecommerce.backend.dto.ProductPageResponseDto;
 import com.ecommerce.backend.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +22,12 @@ public class ProductController {
 
     private final ProductService productService;
 
+    // Add import: import jakarta.validation.Valid;
+
     @Operation(summary = "Add a Product (ADMIN/VENDOR ONLY)", description = "Only Admins and Vendors can create products.")
-    @PreAuthorize("hasAnyRole('ADMIN', 'VENDOR')") // Enforces either role
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDOR')")
     @PostMapping
-    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
+    public ResponseEntity<ProductDto> createProduct(@Valid @RequestBody ProductDto productDto) {
         return new ResponseEntity<>(productService.createProduct(productDto), HttpStatus.CREATED);
     }
 
@@ -40,9 +44,14 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    @Operation(summary = "Get All Products", description = "Publicly accessible.")
+    @Operation(summary = "Get all products (Paginated)", description = "Fetches a paginated and sorted list of products.")
     @GetMapping
-    public ResponseEntity<List<ProductDto>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<ProductPageResponseDto> getAllProducts(
+            @RequestParam(value = "pageNo", defaultValue = "0", required = false) int pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10", required = false) int pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "id", required = false) String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = "asc", required = false) String sortDir
+    ) {
+        return ResponseEntity.ok(productService.getAllProducts(pageNo, pageSize, sortBy, sortDir));
     }
 }

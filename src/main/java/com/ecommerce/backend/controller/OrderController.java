@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,5 +36,15 @@ public class OrderController {
     @PostMapping("/verify-payment")
     public ResponseEntity<OrderResponseDto> verifyPayment(@RequestBody PaymentVerificationDto verificationDto) {
         return ResponseEntity.ok(orderService.verifyPayment(verificationDto));
+    }
+
+    @Operation(summary = "Update Order Status (ADMIN/VENDOR ONLY)", description = "Change status to SHIPPED, DELIVERED, or CANCELLED. Cancelling automatically restocks inventory.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'VENDOR')")
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OrderResponseDto> updateOrderStatus(
+            @PathVariable Long id,
+            @RequestParam com.ecommerce.backend.entity.OrderStatus status) {
+
+        return ResponseEntity.ok(orderService.updateOrderStatus(id, status));
     }
 }

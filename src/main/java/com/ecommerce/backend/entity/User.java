@@ -14,7 +14,7 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "users")
-public class User implements UserDetails { // Implement UserDetails
+public class User extends BaseEntity implements UserDetails { // Implement UserDetails
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,6 +34,9 @@ public class User implements UserDetails { // Implement UserDetails
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private boolean active = true;
 
     // --- Spring Security UserDetails Methods ---
 
@@ -57,5 +60,7 @@ public class User implements UserDetails { // Implement UserDetails
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() {
+        return this.active;
+    }
 }

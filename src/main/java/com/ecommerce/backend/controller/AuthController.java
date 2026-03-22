@@ -6,6 +6,7 @@ import com.ecommerce.backend.dto.UserCreateDto;
 import com.ecommerce.backend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class AuthController {
 
     @Operation(summary = "Register a new user", description = "Creates an account. Does NOT return a JWT token.")
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody UserCreateDto request) {
+    public ResponseEntity<String> register(@Valid @RequestBody UserCreateDto request) {
         return ResponseEntity.ok(authService.register(request));
     }
 

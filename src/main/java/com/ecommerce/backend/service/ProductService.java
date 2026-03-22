@@ -1,12 +1,17 @@
 package com.ecommerce.backend.service;
 
 import com.ecommerce.backend.dto.ProductDto;
+import com.ecommerce.backend.dto.ProductPageResponseDto;
 import com.ecommerce.backend.entity.Category;
 import com.ecommerce.backend.entity.Product;
 import com.ecommerce.backend.exception.ResourceNotFoundException;
 import com.ecommerce.backend.repository.CategoryRepository;
 import com.ecommerce.backend.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -60,10 +65,33 @@ public class ProductService {
         return mapToDto(product);
     }
 
-    public List<ProductDto> getAllProducts() {
-        return productRepository.findAll().stream()
+    public ProductPageResponseDto getAllProducts(int pageNo, int pageSize, String sortBy, String sortDir) {
+
+        // 1. Determine the sort direction dynamically
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        // 2. Create the Pageable instance
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        // 3. Fetch the paginated data from the database
+        Page<Product> productsPage = productRepository.findAll(pageable);
+
+        // 4. Convert Entities to DTOs
+        List<ProductDto> content = productsPage.getContent().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+
+        // 5. Build and return the comprehensive response DTO
+        ProductPageResponseDto response = new ProductPageResponseDto();
+        response.setContent(content);
+        response.setPageNo(productsPage.getNumber());
+        response.setPageSize(productsPage.getSize());
+        response.setTotalElements(productsPage.getTotalElements());
+        response.setTotalPages(productsPage.getTotalPages());
+        response.setLast(productsPage.isLast());
+
+        return response;
     }
 
     // Helper method

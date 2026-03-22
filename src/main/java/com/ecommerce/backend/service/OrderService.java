@@ -29,7 +29,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final PaymentService paymentService;
 
-    @Transactional // CRITICAL: Ensures all DB operations succeed or fail together
+    @Transactional
     public OrderResponseDto placeOrder(OrderRequestDto request) {
         // 1. Validate User
         User user = userRepository.findById(request.getUserId())
@@ -118,12 +118,7 @@ public class OrderService {
             throw new RuntimeException("Payment signature verification failed!");
         }
 
-        // 2. Find the order by its Razorpay Order ID (Wait, we need to save this in the DB first!)
-        // IMPORTANT FIX: In our Order entity, we didn't save the Razorpay Order ID.
-        // Let's assume you pass the actual Database Order ID from the frontend for now,
-        // but for a production app, you should add 'razorpayOrderId' as a column in the Order entity.
-
-        // Let's do a quick workaround for this MVP: We will assume the frontend sends the DB Order ID in the URL.
+        // 2. Find the order by its Razorpay Order ID (Wait, we need to save this in the DB first!
         return "Payment Successful! Order is confirmed.";
     }
     @Transactional
@@ -144,6 +139,31 @@ public class OrderService {
 
         // Update status
         order.setStatus(com.ecommerce.backend.entity.OrderStatus.PAID);
+        Order updatedOrder = orderRepository.save(order);
+
+        return mapToResponseDto(updatedOrder);
+    }
+    @Transactional
+    public OrderResponseDto updateOrderStatus(Long orderId, com.ecommerce.backend.entity.OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + orderId));
+
+        // Prevent modifying already cancelled orders
+        if (order.getStatus() == com.ecommerce.backend.entity.OrderStatus.CANCELLED) {
+            throw new RuntimeException("Order is already cancelled and cannot be modified.");
+        }
+
+        // BUSINESS LOGIC: If the order is being cancelled, we MUST restock the inventory
+        if (newStatus == com.ecommerce.backend.entity.OrderStatus.CANCELLED) {
+            for (com.ecommerce.backend.entity.OrderItem item : order.getOrderItems()) {
+                com.ecommerce.backend.entity.Product product = item.getProduct();
+                product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
+                productRepository.save(product); // Put the stock back!
+            }
+        }
+
+        // Update the status and save
+        order.setStatus(newStatus);
         Order updatedOrder = orderRepository.save(order);
 
         return mapToResponseDto(updatedOrder);
